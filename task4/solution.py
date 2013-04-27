@@ -34,18 +34,17 @@ class TicTacToeBoard:
             self.player2 = 'X'
 
     def __setitem__(self, key, value):
-        if self.current_move == value:
-            raise NotYourTurn
-        if value not in self.MOVES:
-            raise InvalidValue
         if key not in self.TILES:
             raise InvalidKey
+        if value not in self.MOVES:
+            raise InvalidValue
         if self.board[key]:
             raise InvalidMove
-        if self.current_move:
-            self.current_move = value
-        else:
+        if self.current_move == value:
+            raise NotYourTurn
+        if not self.current_move:
             self.set_players_turn(value)
+        self.current_move = value
         self.board[key] = value
 
     def __getitem__(self, key):
@@ -70,21 +69,15 @@ class TicTacToeBoard:
             return "Draw!"
 
     def __str__(self):
-        coords = {1: ("A1", "B1", "C1"),
-                  2: ("A2", "B2", "C2"),
-                  3: ("A3", "B3", "C3")}
-        ascii_board = '\n'
-        for row in range(7, 0, -1):
-            if row % 2 != 0:
-                ascii_board += (' ' * 2) + ('-' * 13) + '\n'
-            else:
-                i = row // 2
-                new_row = '{} |'.format(i)
-                for j in coords[i]:
-                    if not self.board[j]:
-                        new_row += '   |'
-                    else:
-                        new_row += ' {} |'.format(self.board[j])
-                ascii_board += new_row + '\n'
-        ascii_board += '    A   B   C  \n'
-        return ascii_board
+        for key in self.board:
+            if not self.board[key]:
+                self.board[key] = ' '
+        return '''
+  -------------
+3 | {A3} | {B3} | {C3} |
+  -------------
+2 | {A2} | {B2} | {C2} |
+  -------------
+1 | {A1} | {B1} | {C1} |
+  -------------
+    A   B   C  \n'''.format(**self.board)
