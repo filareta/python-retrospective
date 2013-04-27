@@ -1,49 +1,41 @@
-from collections import defaultdict
-
-
 class Person:
     def __init__(self, name, birth_year, gender,
                  father=None, mother=None):
         self.name = name
         self.birth_year = birth_year
         self.gender = gender
-        self.children_list = defaultdict(list)
+        self._children = []
         self.father = father
-        if self.father:
-            self.father.add_child(self)
         self.mother = mother
+        self._add_child(father, mother)
+
+    def _add_child(self, *parents):
+        for parent in parents:
+            if parent:
+                parent._children.append(self)
+
+    def _get_relatives(self, gender):
+        from_mam, from_dad = [], []
         if self.mother:
-            self.mother.add_child(self)
-
-    def add_child(self, child):
-        self.children_list[child.gender].append(child)
-
-    def get_children(self, gender):
-        if self.mother and self.father:
-            children = self.mother.children_list[gender]
-            for child in self.father.children_list[gender]:
-                if child not in children:
-                    children.append(child)
-            return [child for child in children if child != self]
-        elif self.father:
-            return [c for c in self.father.children_list[gender] if self != c]
-        elif self.mother:
-            return [c for c in self.mother.children_list[gender] if self != c]
-        else:
-            return []
+            from_mam = [c for c in self.mother.children(gender) if self != c]
+        if self.father:
+            from_dad = [c for c in self.father.children(gender) if self != c]
+        return list(set(from_mam + from_dad))
 
     def get_brothers(self):
-        return self.get_children('M')
+        return self._get_relatives('M')
 
     def get_sisters(self):
-        return self.get_children('F')
+        return self._get_relatives('F')
 
-    def children(self, **gender):
+    def children(self, gender=None):
         if gender:
-            key = gender['gender']
-            return self.children_list[key]
+            return [c for c in self._children if c.gender == gender]
         else:
-            return self.children_list.values()
+            return self._children
+
+    def __hash__(self):
+        return hash(repr(self))
 
     def __eq__(self, other):
         person1 = [self.name, self.gender, self.birth_year]
@@ -55,9 +47,5 @@ class Person:
     def __ne__(self, other):
         return not self.__eq__(other)
 
-    def is_direct_successor(self, other):
-        if self.children_list:
-            for people in self.children_list.values():
-                if other in people:
-                    return True
-        return False
+    def is_direct_successor(self, child):
+        return child in self._children
